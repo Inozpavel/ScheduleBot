@@ -1,38 +1,41 @@
+import json
 import string
-from datetime import datetime
-
-import vk_api
+from vk_api import VkApi
+from vk_api.keyboard import VkKeyboard
 from vk_api.upload import VkUpload
-from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.utils import get_random_id
+from vk_api.longpoll import VkLongPoll, VkEventType
 from os import path
+
 
 from Keyboards import Keyboards
 
 
 class Bot:
-    HELLO_WORDS = ["бот", "начать", "привет",
-                   "добрый день", "здравствуй", "здравствуйте",
-                   "добрый вечер", "доброе утро", "доброй ночи"]
     TAB = "&#8194;" * 4
 
     def __init__(self, vk_key: string, weather_key: string):
-
+        with open("Configs/HelloWords.json", "r", encoding="utf-8") as file:
+            self.HELLO_WORDS = json.load(file)
         self.__vk_key = vk_key
         self.__weather_key = weather_key
+        print("Бот создан")
 
-        self.vk_session = vk_api.VkApi(token=self.__vk_key)
+    def connect(self) -> None:
+        self.vk_session = VkApi(token=self.__vk_key)
 
         self.vk = self.vk_session.get_api()
         self.upload = VkUpload(self.vk_session)
         self.long_poll = VkLongPoll(self.vk_session)
-        self.listen_for_messages()
+        print("Бот успешно подключен к чату")
 
-    def listen_for_messages(self) -> None:
-        print("Бот успешно запущен")
+    def start_listening_for_messages(self) -> None:
+        print("Бот начал слушать сообщения")
 
         for event in self.long_poll.listen():
+
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+
                 print("From {} message = {}".format(event.user_id, event.text))
                 user_id = event.user_id
                 message = event.text.lower()
@@ -61,6 +64,7 @@ class Bot:
                                 f"\n{self.TAB}1) Кнопочки в меню" +
                                 f"\n{self.TAB}2) Писать команды ручками"
                                 "\n\nНапиши \"бот команды\", узнаешь дополнительные команды.")
+
                     self.send_message(user_id, text, Keyboards.get_main_keyboard())
 
                 elif message == "расписание":
@@ -80,7 +84,7 @@ class Bot:
                                       "Проверь правильность еще раз или выбери из списка.",
                                       Keyboards.get_main_keyboard())
 
-    def send_message(self, user_id: int, message="", keyboard=None) -> None:
+    def send_message(self, user_id: int, message: string = "", keyboard: VkKeyboard = None) -> None:
         """Отправляет указанное собщение выбранному пользоваелю. Можно добавить клавиатуру"""
         self.vk.messages.send(
             user_id=user_id,
