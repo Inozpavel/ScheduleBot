@@ -1,5 +1,6 @@
 import json
 import string
+import re
 from vk_api import VkApi
 from vk_api.keyboard import VkKeyboard
 from vk_api.upload import VkUpload
@@ -7,23 +8,22 @@ from vk_api.utils import get_random_id
 from vk_api.longpoll import VkLongPoll, VkEventType
 from os import path
 
-
 from Keyboards import Keyboards
+from WeatherForecaster import WeatherForecaster
 
 
 class Bot:
     TAB = "&#8194;" * 4
 
     def __init__(self, vk_key: string, weather_key: string):
-        with open("Configs/HelloWords.json", "r", encoding="utf-8") as file:
+        with open("Configs/BotPhrases/HelloWords.json", "r", encoding="utf-8") as file:
             self.HELLO_WORDS = json.load(file)
         self.__vk_key = vk_key
-        self.__weather_key = weather_key
+        self.weather_forecaster = WeatherForecaster(weather_key)
         print("Бот создан")
 
     def connect(self) -> None:
         self.vk_session = VkApi(token=self.__vk_key)
-
         self.vk = self.vk_session.get_api()
         self.upload = VkUpload(self.vk_session)
         self.long_poll = VkLongPoll(self.vk_session)
