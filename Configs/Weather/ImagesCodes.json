@@ -1,0 +1,21 @@
+{
+  "null": "test.png",
+  "01n": "clear_sky_night.png",
+  "01d": "clear_sky_day.png",
+  "02n": "clouds_night.png",
+  "02d": "clouds_day.png",
+  "03n": "clouds_night.png",
+  "03d": "clouds_day.png",
+  "04n": "overcast_clouds_night.png",
+  "04d": "overcast_clouds_day.png",
+  "09n": "heavy_rain.png",
+  "09d": "heavy_rain.png",
+  "10n": "light_rain_night.png",
+  "10d": "light_rain_day.png",
+  "11n": "thunderstorm_night.png",
+  "11d": "thunderstorm.png",
+  "13n": "snow_night.png",
+  "13d": "snow_day.png",
+  "50d": "mist.png",
+  "50n": "mist.png"
+}
