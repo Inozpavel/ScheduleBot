@@ -1,6 +1,5 @@
 import json
 import string
-import re
 from vk_api import VkApi
 from vk_api.keyboard import VkKeyboard
 from vk_api.upload import VkUpload
@@ -19,7 +18,7 @@ class Bot:
         with open("Configs/BotPhrases/HelloWords.json", "r", encoding="utf-8") as file:
             self.HELLO_WORDS = json.load(file)
         self.__vk_key = vk_key
-        self.weather_forecaster = WeatherForecaster(weather_key)
+        self.__weather_key = weather_key
         print("Бот создан")
 
     def connect(self) -> None:
@@ -27,6 +26,8 @@ class Bot:
         self.vk = self.vk_session.get_api()
         self.upload = VkUpload(self.vk_session)
         self.long_poll = VkLongPoll(self.vk_session)
+        self.weather_forecaster = WeatherForecaster(self.__weather_key, self.vk, self.upload)
+
         print("Бот успешно подключен к чату")
 
     def start_listening_for_messages(self) -> None:
@@ -44,7 +45,7 @@ class Bot:
                     user_name = self.vk.users.get(user_id=event.user_id)[0]['first_name']
                     user_surname = self.vk.users.get(user_id=event.user_id)[0]['last_name']
 
-                    if self.check_id_in_data_base(user_id):
+                    if self.__check_id_in_data_base(user_id):
                         text = (f"Рад тебя приветствовать, {user_name} {user_surname}, снова. Я - бот:" +
                                 f"\n{self.TAB}*Я помогу тебе с расписанием, подскажу погоду.*" +
                                 f"\n{self.TAB}*Ты уже сохранил свою группу.*" +
@@ -65,26 +66,30 @@ class Bot:
                                 f"\n{self.TAB}2) Писать команды ручками"
                                 "\n\nНапиши \"бот команды\", узнаешь дополнительные команды.")
 
-                    self.send_message(user_id, text, Keyboards.get_main_keyboard())
+                    self.__send_message(user_id, text, Keyboards.get_main_keyboard())
+
+                elif message == "погода сейчас":
+                    self.weather_forecaster.send_weather_for_now(user_id)
 
                 elif message == "расписание":
-                    if self.check_id_in_data_base(user_id):
-                        self.send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_schedule_keyboard())
+                    if self.__check_id_in_data_base(user_id):
+                        self.__send_message(user_id, "Выбери, пожалуйста, из списка:",
+                                            Keyboards.get_schedule_keyboard())
                     else:
-                        self.send_message(user_id, "Ты пока не сохранил свою группу. Функция не доступна.",
-                                          Keyboards.get_main_keyboard())
+                        self.__send_message(user_id, "Ты пока не сохранил свою группу. Функция не доступна.",
+                                            Keyboards.get_main_keyboard())
                 elif message == "погода":
-                    self.send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_weather_keyboard())
+                    self.__send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_weather_keyboard())
                 elif message == "назад":
-                    self.send_message(user_id, "Возвращаю тебя в меню...", Keyboards.get_main_keyboard())
+                    self.__send_message(user_id, "Возвращаю тебя в меню...", Keyboards.get_main_keyboard())
                 elif message == "настройки":
-                    self.send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_settings_keyboard())
+                    self.__send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_settings_keyboard())
                 else:
-                    self.send_message(user_id, "Я пока не знаю такой команды... Но, возможно, скоро узнаю. " +
-                                      "Проверь правильность еще раз или выбери из списка.",
-                                      Keyboards.get_main_keyboard())
+                    self.__send_message(user_id, "Я пока не знаю такой команды... Но, возможно, скоро узнаю. " +
+                                        "Проверь правильность еще раз или выбери из списка.",
+                                        Keyboards.get_main_keyboard())
 
-    def send_message(self, user_id: int, message: string = "", keyboard: VkKeyboard = None) -> None:
+    def __send_message(self, user_id: int, message: string = "", keyboard: VkKeyboard = None) -> None:
         """Отправляет указанное собщение выбранному пользоваелю. Можно добавить клавиатуру"""
         self.vk.messages.send(
             user_id=user_id,
@@ -93,7 +98,7 @@ class Bot:
             keyboard=keyboard,
         )
 
-    def check_id_in_data_base(self, user_id: int) -> bool:
+    def __check_id_in_data_base(self, user_id: int) -> bool:
         """Возвращает True, если в базе уже есть этот пользователь, иначе False"""
         if not path.exists("Users_Base.txt"):
             return False
