@@ -71,6 +71,12 @@ class Bot:
                 elif message == "погода сейчас":
                     self.weather_forecaster.send_weather_for_now(user_id)
 
+                elif message == "погода сегодня":
+                    self.weather_forecaster.send_weather_for_today(user_id)
+
+                elif message == "погода завтра":
+                    self.weather_forecaster.send_weather_for_tomorrow(user_id)
+
                 elif message == "расписание":
                     if self.__check_id_in_data_base(user_id):
                         self.__send_message(user_id, "Выбери, пожалуйста, из списка:",
