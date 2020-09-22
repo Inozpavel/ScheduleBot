@@ -11,7 +11,7 @@ from vk_api.utils import get_random_id
 from vk_api.vk_api import VkApiMethod
 
 from Keyboards import Keyboards
-from WeatherInformation import WeatherInformation
+from Weather.WeatherInformation import WeatherInformation
 
 
 class WeatherForecaster:
@@ -20,13 +20,13 @@ class WeatherForecaster:
         self.__upload = upload
         self.__vk = vk
 
-        with open("Configs/Weather/WindTypes.json", "r", encoding="utf-8") as file:
+        with open("../Configs/Weather/WindTypes.json", "r", encoding="utf-8") as file:
             self.WIND_TYPES = json.load(file)
-        with open("Configs/Weather/WindDirections.json", "r", encoding="utf-8") as file:
+        with open("../Configs/Weather/WindDirections.json", "r", encoding="utf-8") as file:
             self.WIND_DIRECTIONS = json.load(file)
-        with open("Configs/Weather/ImagesCodes.json", "r", encoding="utf-8") as file:
+        with open("../Configs/Weather/ImagesCodes.json", "r", encoding="utf-8") as file:
             self.IMAGES_CODES = json.load(file)
-        with open("Configs/Weather/DayPeriods.json", "r", encoding="utf-8") as file:
+        with open("../Configs/Weather/DayPeriods.json", "r", encoding="utf-8") as file:
             self.DAY_PERIODS = json.load(file)
 
     def send_weather_for_now(self, user_id: int) -> None:
@@ -47,6 +47,20 @@ class WeatherForecaster:
             Картинка - несколько склеенных картинок с прогнозом погоды для каждого периода дня
         """
         self.__send_weather_for_one_day(user_id, datetime.today().date() + timedelta(1))
+
+    def send_weather_for_five_days(self, user_id: int) -> None:
+        images = []
+        for i in range(5):
+            date = datetime.today().date() + timedelta(i)
+            message = "Погода на {}:\n".format(date.day)
+            for weather_info in self.__get_weather_for_day(date):
+                if weather_info.day_period == "утром" or weather_info.day_period == "вечером":
+                    images.append(weather_info.image_code)
+                    message += weather_info.day_period.capitalize() + ": \n"
+                    message += self.__convert_weather_information_to_text(weather_info, is_weather_now=False)
+            self.__send_message(user_id, message, "", should_send_keyboard=False)
+        image_url = self.__upload_pictures(images)
+        self.__send_message(user_id, "", image_url, should_send_keyboard=True)
 
     def __send_weather_for_one_day(self, user_id: int, day_date: datetime) -> None:
         """Отправляет информацию о погоде на указанный день указанному пользователю, прикрепляет картинку.
@@ -139,7 +153,7 @@ class WeatherForecaster:
     def __upload_pictures(self, images: List[str]) -> str:
         """Склеивает картинки из списка images в одну, загружает на сервер, возвращает ссылку"""
         if 4 < len(images) <= 10:
-            image = Image.open("Images/Background/background_1280x512.png")
+            image = Image.open("../Images/Background/background_1280x512.png")
             if "n" in images[0]:
                 images.insert(0, "null")
             for i in range(5):
@@ -151,8 +165,8 @@ class WeatherForecaster:
         else:
             image = Image.open("Images/Background/background_" + str(len(images) * 256) + "x256.png")
             for i in range(len(images)):
-                new_image = Image.open("Images/Weather/" + self.IMAGES_CODES[images[i]])
-                image.paste(new_image.resize((256, 256)), (256 * i, 0))
+                weather_image = Image.open("Images/Weather/" + self.IMAGES_CODES[images[i]])
+                image.paste(weather_image.resize((256, 256)), (256 * i, 0))
         arr = io.BytesIO()
         image.save(arr, format="PNG")
         arr.seek(0)

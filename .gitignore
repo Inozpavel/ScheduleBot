@@ -2,6 +2,6 @@
 base.txt
 log.log
 vk_key.txt
-weather_key.txt
+Weather/weather_key.txt
 venv/
 __pycache__/

@@ -8,7 +8,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from os import path
 
 from Keyboards import Keyboards
-from WeatherForecaster import WeatherForecaster
+from Weather.WeatherForecaster import WeatherForecaster
 
 
 class Bot:
@@ -76,6 +76,9 @@ class Bot:
 
                 elif message == "погода завтра":
                     self.weather_forecaster.send_weather_for_tomorrow(user_id)
+
+                elif message == "погода на 5 дней":
+                    self.weather_forecaster.send_weather_for_five_days(user_id)
 
                 elif message == "расписание":
                     if self.__check_id_in_data_base(user_id):
