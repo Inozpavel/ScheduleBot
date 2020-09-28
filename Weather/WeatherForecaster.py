@@ -1,5 +1,4 @@
 import io
-import string
 import json
 from datetime import datetime, timedelta
 from typing import Dict, List
@@ -16,7 +15,7 @@ from Weather.WeatherInformation import WeatherInformation
 
 
 class WeatherForecaster:
-    def __init__(self, weather_api_key: string, vk: VkApiMethod, upload: VkUpload):
+    def __init__(self, weather_api_key: str, vk: VkApiMethod, upload: VkUpload):
         self.__weather_api_key = weather_api_key
         self.__upload = upload
         self.__vk = vk
@@ -178,7 +177,7 @@ class WeatherForecaster:
         image = "photo{}_{}".format(photo[0]["owner_id"], photo[0]["id"])
         return image
 
-    def __send_message(self, user_id: int, message: string, image_url: str, should_send_keyboard: bool = False) -> None:
+    def __send_message(self, user_id: int, message: str, image_url: str, should_send_keyboard: bool = False) -> None:
         """Отправляет указанное собщение выбранному пользоваелю. Можно добавить клавиатуру"""
         keyboard = Keyboards.get_weather_keyboard() if should_send_keyboard else ""
         self.__vk.messages.send(
