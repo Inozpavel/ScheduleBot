@@ -10,6 +10,7 @@ from vk_api import VkUpload
 from vk_api.utils import get_random_id
 from vk_api.vk_api import VkApiMethod
 
+from Functions import get_day_name_by_date
 from Keyboards import Keyboards
 from Weather.WeatherInformation import WeatherInformation
 
@@ -20,13 +21,13 @@ class WeatherForecaster:
         self.__upload = upload
         self.__vk = vk
 
-        with open("../Configs/Weather/WindTypes.json", "r", encoding="utf-8") as file:
+        with open("./Configs/Weather/WindTypes.json", "r", encoding="utf-8") as file:
             self.WIND_TYPES = json.load(file)
-        with open("../Configs/Weather/WindDirections.json", "r", encoding="utf-8") as file:
+        with open("./Configs/Weather/WindDirections.json", "r", encoding="utf-8") as file:
             self.WIND_DIRECTIONS = json.load(file)
-        with open("../Configs/Weather/ImagesCodes.json", "r", encoding="utf-8") as file:
+        with open("./Configs/Weather/ImagesCodes.json", "r", encoding="utf-8") as file:
             self.IMAGES_CODES = json.load(file)
-        with open("../Configs/Weather/DayPeriods.json", "r", encoding="utf-8") as file:
+        with open("./Configs/Weather/DayPeriods.json", "r", encoding="utf-8") as file:
             self.DAY_PERIODS = json.load(file)
 
     def send_weather_for_now(self, user_id: int) -> None:
@@ -40,19 +41,26 @@ class WeatherForecaster:
         """Отправляет информацию о погоде на сегодня указанному пользователю, прикрепляет картинку.
             Картинка - несколько склеенных картинок с прогнозом погоды для каждого периода дня
         """
+        self.__send_message(user_id, "Погода на сегодня:, {}".format(get_day_name_by_date(datetime.today().date())),
+                            "", "")
         self.__send_weather_for_one_day(user_id, datetime.today().date())
 
     def send_weather_for_tomorrow(self, user_id: int) -> None:
         """Отправляет информацию о погоде на завтра указанному пользователю, прикрепляет картинку.
             Картинка - несколько склеенных картинок с прогнозом погоды для каждого периода дня
         """
+        self.__send_message(user_id,
+                            "Погода на завтра, {}:".format(
+                                get_day_name_by_date(datetime.today().date() + timedelta(1))),
+                            "", "")
         self.__send_weather_for_one_day(user_id, datetime.today().date() + timedelta(1))
 
     def send_weather_for_five_days(self, user_id: int) -> None:
         images = []
         for i in range(5):
             date = datetime.today().date() + timedelta(i)
-            message = "Погода на {}:\n".format(date.day)
+            message = "Погода на {}.{}.{}, {}:\n".format(str(date.day).rjust(2, '0'), str(date.month).rjust(2, '0'),
+                                                         date.year, get_day_name_by_date(date))
             for weather_info in self.__get_weather_for_day(date):
                 if weather_info.day_period == "утром" or weather_info.day_period == "вечером":
                     images.append(weather_info.image_code)
@@ -81,10 +89,6 @@ class WeatherForecaster:
             "http://api.openweathermap.org/data/2.5/weather?q=moscow&appid=" + self.__weather_api_key +
             "&units=metric&lang=ru")
         return self.__parse_weather(response.json())
-
-    def __get_weather_for_five_days(self):
-        """Возвращает информацию о погоде на 5 дней"""
-        pass
 
     def __get_weather_for_day(self, day_date: datetime):
         """Возвращает информацию о погоде на указанный день"""
@@ -153,7 +157,7 @@ class WeatherForecaster:
     def __upload_pictures(self, images: List[str]) -> str:
         """Склеивает картинки из списка images в одну, загружает на сервер, возвращает ссылку"""
         if 4 < len(images) <= 10:
-            image = Image.open("../Images/Background/background_1280x512.png")
+            image = Image.open("./Images/Background/background_1280x512.png")
             if "n" in images[0]:
                 images.insert(0, "null")
             for i in range(5):
@@ -190,7 +194,7 @@ class WeatherForecaster:
         tab = "" if is_weather_now else "&#8194;" * 3
         message = tab + "{}, температура: ".format(info.description)
 
-        message += "{}°C".format(info.average_temperature) if is_weather_now else "{}..{}°C".format(
+        message += "{}°C".format(info.average_temperature) if is_weather_now else "{}°C..{}°C".format(
             info.min_temperature, info.max_temperature)
 
         message += '\n' + tab + "Давление: {} мм рт. ст., влажность: {}%".format(info.pressure, info.humidity)
