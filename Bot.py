@@ -6,8 +6,10 @@ from vk_api.upload import VkUpload
 from vk_api.utils import get_random_id
 from vk_api.longpoll import VkLongPoll, VkEventType
 from os import path
+import re
 
 from Keyboards import Keyboards
+from Schedule.ScheduleParser import ScheduleParser
 from Weather.WeatherForecaster import WeatherForecaster
 
 
@@ -27,7 +29,7 @@ class Bot:
         self.upload = VkUpload(self.vk_session)
         self.long_poll = VkLongPoll(self.vk_session)
         self.weather_forecaster = WeatherForecaster(self.__weather_key, self.vk, self.upload)
-
+        self.schedule_parser = ScheduleParser(self.vk, self.upload)
         print("Бот успешно подключен к чату")
 
     def start_listening_for_messages(self) -> None:
@@ -87,12 +89,21 @@ class Bot:
                     else:
                         self.__send_message(user_id, "Ты пока не сохранил свою группу. Функция не доступна.",
                                             Keyboards.get_main_keyboard())
+                elif message == "расписание занятий":
+                    self.schedule_parser.send_lessons_time(user_id)
                 elif message == "погода":
                     self.__send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_weather_keyboard())
                 elif message == "назад":
                     self.__send_message(user_id, "Возвращаю тебя в меню...", Keyboards.get_main_keyboard())
                 elif message == "настройки":
                     self.__send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_settings_keyboard())
+                elif message == "сохранить группу":
+                    self.__send_message(user_id,
+                                        "Введи, пожалуйста, данные в формате:\n бот группа {сама группа}\n\nПример:\n" +
+                                        "бот группа ИКБО-09-19", Keyboards.get_settings_keyboard())
+                elif re.match("^\s*бот\s+группа\s+[а-я]{4}-\d\d-\d\d\s*$", message):
+                    group = message.split()[2]
+                    self.__update_base_info(user_id, group)
                 else:
                     self.__send_message(user_id, "Я пока не знаю такой команды... Но, возможно, скоро узнаю. " +
                                         "Проверь правильность еще раз или выбери из списка.",
@@ -107,12 +118,34 @@ class Bot:
             keyboard=keyboard,
         )
 
+    def __update_base_info(self, user_id: int, group: str) -> None:
+        """Проверяет, есть ли указанный id в базе, если есть, перезапасывает информация в базу данных,
+            иначе дописывает в конец нового пользователя
+        """
+        if not path.exists("./Configs/UsersBase.txt"):
+            with open("./Configs/UsersBase.txt", "w", encoding="utf-8") as file:
+                file.write("ID:       Group:")
+
+        with open("./Configs/UsersBase.txt", "r", encoding="utf-8") as file:
+            users = file.readlines()
+        for i in range(1, len(users)):
+            if users[i][0:9] == str(user_id):
+                users[i] = "{} {}".format(user_id, group)
+                text = "Группа успешно найдена!\nЯ перезаписал сохраненные данные)"
+                break
+        else:
+            users.append("\n{} {}".format(user_id, group))
+            text = "Группа успешно найдена! Я запомнил твою группу.\nТеперь ты можешь пользоваться расписанием)"
+        with open("./Configs/UsersBase.txt", "w", encoding="utf-8") as file:
+            file.writelines(users)
+        self.__send_message(user_id, text, Keyboards.get_main_keyboard())
+
     def __check_id_in_data_base(self, user_id: int) -> bool:
         """Возвращает True, если в базе уже есть этот пользователь, иначе False"""
-        if not path.exists("Users_Base.txt"):
+        if not path.exists("./Configs/UsersBase.txt"):
             return False
 
-        for i in open("Users_Base.txt", "r", encoding="utf-8"):
+        for i in open("./Configs/UsersBase.txt", "r", encoding="utf-8"):
             if i[0:9] == str(user_id):
                 return True
         else:
