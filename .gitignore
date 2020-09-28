@@ -1,7 +1,6 @@
+Configs/VkKey.txt
+Configs/UsersBase.txt
+Configs/WeatherKey.txt
 .idea
-base.txt
-log.log
-vk_key.txt
-Weather/weather_key.txt
 venv/
 __pycache__/
