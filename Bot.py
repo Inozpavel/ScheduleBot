@@ -19,6 +19,8 @@ class Bot:
     def __init__(self, vk_key: string, weather_key: string):
         with open("Configs/BotPhrases/HelloWords.json", "r", encoding="utf-8") as file:
             self.HELLO_WORDS = json.load(file)
+        with open("Configs/BotPhrases/CovidWords.json", "r", encoding="utf-8") as file:
+            self.COVID_WORDS = json.load(file)
         self.__vk_key = vk_key
         self.__weather_key = weather_key
         print("Бот создан")
@@ -37,14 +39,13 @@ class Bot:
 
         for event in self.long_poll.listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-                print("From {} message = {}".format(event.user_id, event.text))
                 user_id = event.user_id
+                user_name = self.vk.users.get(user_id=event.user_id)[0]['first_name']
+                user_surname = self.vk.users.get(user_id=event.user_id)[0]['last_name']
                 message = event.text.lower()
+                print("Отправитель: {} {}, сообщение: {}".format(user_surname, user_name, event.message))
 
                 if message in self.HELLO_WORDS:
-                    user_name = self.vk.users.get(user_id=event.user_id)[0]['first_name']
-                    user_surname = self.vk.users.get(user_id=event.user_id)[0]['last_name']
-
                     if self.__check_id_in_data_base(user_id):
                         text = (f"Рад тебя приветствовать, {user_name} {user_surname}, снова. Я - бот:" +
                                 f"\n{self.TAB}*Я помогу тебе с расписанием, подскажу погоду.*" +
