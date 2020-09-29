@@ -1,12 +1,12 @@
+import re
 import json
 import string
+from os import path
 from vk_api import VkApi
 from vk_api.keyboard import VkKeyboard
 from vk_api.upload import VkUpload
 from vk_api.utils import get_random_id
 from vk_api.longpoll import VkLongPoll, VkEventType
-from os import path
-import re
 
 from Keyboards import Keyboards
 from Schedule.ScheduleParser import ScheduleParser
@@ -36,9 +36,7 @@ class Bot:
         print("Бот начал слушать сообщения")
 
         for event in self.long_poll.listen():
-
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-
                 print("From {} message = {}".format(event.user_id, event.text))
                 user_id = event.user_id
                 message = event.text.lower()
@@ -97,13 +95,21 @@ class Bot:
                     self.__send_message(user_id, "Возвращаю тебя в меню...", Keyboards.get_main_keyboard())
                 elif message == "настройки":
                     self.__send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_settings_keyboard())
+                elif message == "узнать свой институт, курс и группу":
+                    if self.__check_id_in_data_base(user_id):
+                        group = self.schedule_parser.get_group_by_id(user_id).upper()
+                        self.__send_message(user_id, "Институт: {}\nГруппа: {}\nКурс: {}".format(
+                            self.schedule_parser.get_full_institute_name_by_group(group),
+                            group, self.schedule_parser.get_course_by_group(group)))
+                    else:
+                        self.__send_message(user_id, "Ты пока не сохранил свою группу. Функция не доступна.",
+                                            Keyboards.get_settings_keyboard())
                 elif message == "сохранить группу":
                     self.__send_message(user_id,
                                         "Введи, пожалуйста, данные в формате:\n бот группа {сама группа}\n\nПример:\n" +
                                         "бот группа ИКБО-09-19", Keyboards.get_settings_keyboard())
-                elif re.match("^\s*бот\s+группа\s+[а-я]{4}-\d\d-\d\d\s*$", message):
-                    group = message.split()[2]
-                    self.__update_base_info(user_id, group)
+                elif re.match("^\\s*бот\\s+группа\\s+[а-я]{4}-\\d\\d-\\d\\d\\s*$", message):
+                    self.__update_base_info(user_id, message.split()[2])
                 else:
                     self.__send_message(user_id, "Я пока не знаю такой команды... Но, возможно, скоро узнаю. " +
                                         "Проверь правильность еще раз или выбери из списка.",

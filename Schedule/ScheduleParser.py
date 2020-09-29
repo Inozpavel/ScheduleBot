@@ -1,26 +1,31 @@
 import json
 import re
+from datetime import datetime
 from os import mkdir, path
 import shutil
 
 import requests
 from bs4 import BeautifulSoup
+from vk_api import VkUpload
 from vk_api.utils import get_random_id
+from vk_api.vk_api import VkApiMethod
 
 from Keyboards import Keyboards
 
 
 class ScheduleParser:
-    def __init__(self, vk, upload):
+    def __init__(self, vk: VkApiMethod, upload: VkUpload):
         self.__upload = upload
         self.__vk = vk
         with open("./Configs/Schedule/LessonsTime.json", "r", encoding="utf-8") as file:
             self.LESSONS_TIME = json.load(file)
+        with open("./Configs/Schedule/InstitutesDecryption.json", "r", encoding="utf-8") as file:
+            self.INSTITUTES_DECRYPTION = json.load(file)
         if path.exists("./Schedule/ScheduleFiles"):
             shutil.rmtree("./Schedule/ScheduleFiles")
         self.__download_all_schedule_files()
 
-    def send_lessons_time(self, user_id) -> None:
+    def send_lessons_time(self, user_id: int) -> None:
         """Отправляет указанному пользователю информацию о начале конце всех пар"""
         message = ""
         for key in self.LESSONS_TIME:
@@ -62,6 +67,35 @@ class ScheduleParser:
                     mkdir("./Schedule/ScheduleFiles/" + folder_name)
                 with open("./Schedule/ScheduleFiles/" + folder_name + "/" + course + ".xlsx", "bw") as file:
                     file.write(requests.get(url).content)
+
+    def get_group_by_id(self, user_id: int) -> str:
+        """Возвращает группу, сохраненную у пользователя c указанным id"""
+        with open("./Configs/UsersBase.txt", "r", encoding="utf-8") as file:
+            users = file.readlines()
+        for line in users:
+            if line[0:9] == str(user_id):
+                return line[10:20]
+        raise Exception("Пользователь не найден!")
+
+    def get_course_by_group(self, group: str) -> int:
+        """Возвращает курс для указанной группы"""
+        current_month = datetime.today().month
+        current_year = int(str(datetime.today().year)[2:])
+        if 0 < current_month < 9:
+            course = current_year - int(group[8:])
+        else:
+            course = current_year + 1 - int(group[8:])
+
+        if 0 < course < 6:
+            return course
+        else:
+            raise Exception("Невозможно получить для данной группы курс!")
+
+    def get_full_institute_name_by_group(self, group: str) -> str:
+        """Возвращает полное название института для указанной группы"""
+        institute_info = self.INSTITUTES_DECRYPTION[group[0]]
+        abbreviation = list(institute_info.keys())[0]
+        return institute_info[abbreviation]
 
     def __send_message(self, user_id: int, message: str, image_url: str,
                        should_send_keyboard: bool = False) -> None:
