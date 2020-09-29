@@ -23,7 +23,7 @@ class Bot:
             self.COVID_WORDS = json.load(file)
         self.__vk_key = vk_key
         self.__weather_key = weather_key
-        print("Бот создан")
+        print("Бот инициализирован")
 
     def connect(self) -> None:
         self.vk_session = VkApi(token=self.__vk_key)
@@ -90,6 +90,9 @@ class Bot:
                                             Keyboards.get_main_keyboard())
                 elif message == "расписание занятий":
                     self.schedule_parser.send_lessons_time(user_id)
+                elif message == "номер учебной недели":
+                    self.__send_message(user_id, self.schedule_parser.get_current_week_number_description(),
+                                        Keyboards.get_main_keyboard())
                 elif message == "погода":
                     self.__send_message(user_id, "Выбери, пожалуйста, из списка:", Keyboards.get_weather_keyboard())
                 elif message == "назад":

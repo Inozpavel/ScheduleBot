@@ -1,6 +1,7 @@
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, date
+from math import ceil
 from os import mkdir, path
 import shutil
 
@@ -96,6 +97,29 @@ class ScheduleParser:
         institute_info = self.INSTITUTES_DECRYPTION[group[0]]
         abbreviation = list(institute_info.keys())[0]
         return institute_info[abbreviation]
+
+    def get_current_week_number_description(self) -> str:
+        """Возвращает словесное описание для номера недели"""
+        current_week_number = self.get_current_week_number(datetime.today().date())
+        text = "Сейчас идет {} учебная неделя. ".format(current_week_number)
+        if current_week_number == 17:
+            text += "Началась сессия."
+        elif 18 <= current_week_number <= 20:
+            text += "Продолжается сессия."
+        elif current_week_number > 20:
+            text += "Летние каникулы."
+        return text
+
+    def get_current_week_number(self, current_date: date) -> int:
+        """Для указанной даты возвращает номер учебной недели"""
+        first_semester_start = datetime.strptime("01.09." + str(current_date.year), "%d.%m.%Y").date()
+        next_semester_start = datetime.strptime("10.02." + str(current_date.year + 1), "%d.%m.%Y").date()
+
+        if first_semester_start <= current_date < next_semester_start:
+            return ceil((current_date - first_semester_start + timedelta(1)).days / 7)  # нечетный семестр
+        else:
+            second_semester_start = datetime.strptime("10.02." + str(current_date.year), "%d.%m.%Y").date()
+            return ceil((current_date - second_semester_start + timedelta(1)).days / 7)  # четный семестр
 
     def __send_message(self, user_id: int, message: str, image_url: str,
                        should_send_keyboard: bool = False) -> None:
