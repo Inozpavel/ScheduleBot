@@ -1,6 +1,8 @@
 Configs/VkKey.txt
 Configs/UsersBase.txt
 Configs/WeatherKey.txt
+
 .idea
 venv/
 __pycache__/
+Schedule/ScheduleFiles
