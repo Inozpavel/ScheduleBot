@@ -9,7 +9,7 @@ from vk_api import VkUpload
 from vk_api.utils import get_random_id
 from vk_api.vk_api import VkApiMethod
 
-from Functions import get_day_name_by_date
+from Functions import get_day_name_by_date, get_month_name_by_date
 from Keyboards import Keyboards
 from Weather.WeatherInformation import WeatherInformation
 
@@ -40,7 +40,7 @@ class WeatherForecaster:
         """Отправляет информацию о погоде на сегодня указанному пользователю, прикрепляет картинку.
             Картинка - несколько склеенных картинок с прогнозом погоды для каждого периода дня
         """
-        self.__send_message(user_id, "Погода на сегодня:, {}".format(get_day_name_by_date(datetime.today().date())),
+        self.__send_message(user_id, "Погода на сегодня, {}:".format(get_day_name_by_date(datetime.today().date())),
                             "", "")
         self.__send_weather_for_one_day(user_id, datetime.today().date())
 
@@ -58,7 +58,7 @@ class WeatherForecaster:
         images = []
         for i in range(5):
             date = datetime.today().date() + timedelta(i)
-            message = "Погода на {}.{}.{}, {}:\n".format(str(date.day).rjust(2, '0'), str(date.month).rjust(2, '0'),
+            message = "Погода на {} {} {}, {}:\n".format(str(date.day).rjust(2, '0'), get_month_name_by_date(date),
                                                          date.year, get_day_name_by_date(date))
             for weather_info in self.__get_weather_for_day(date):
                 if weather_info.day_period == "утром" or weather_info.day_period == "вечером":
